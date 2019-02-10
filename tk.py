@@ -8,7 +8,7 @@ def helloCallBack():
    tkMessageBox.showinfo( "Haha your computer will shut down anyways")
    os.system('shutdown /s /t 1')
 
-B = Tkinter.Button(top, text ="Don't shut down", command = helloCallBack)
+d = Tkinter.Button(top, text ="Don't shut down", command = helloCallBack)
 
-B.pack()
+d.pack()
 top.mainloop()
