@@ -13,5 +13,13 @@ def polygon(length, sides):
     w.fill((255, 255, 255))
     draw.polygon(w, (0, 0, 0), points)
     display.flip()
-polygon(300, 36001)
+d = True
+while d:
+    for e in event.get():
+        if e.type == MOUSEBUTTONDOWN:
+            down = True
+        if e.type == MOUSEBUTTONUP and down:
+            length = int(input("Length of side "))
+            sides = int(input("Number of sides "))
+polygon(length, sides)
 time.wait(5000)
