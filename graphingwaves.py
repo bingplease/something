@@ -1,25 +1,44 @@
 from pygame import *
 from math import *
 init()
-w = display.set_mode([1000, 1000])
+width, height = 1000, 1000
+w = display.set_mode([width, height])
+factor = 100
 w.fill((255, 255, 255))
 def sinwave():
-    for i in range(1, 1000):
-        draw.line(w, (255, 0, 0), (i, -sin(radians(i)) * 100 + 500), (i, -sin(radians(i)) * 100 + 500), 3)
+    for i in range(1, width):
+        draw.line(w, (255, 0, 0), (i, -sin(radians(i)) * factor + height/2), (i, -sin(radians(i)) * factor + height/2), 3)
         display.flip()
         print(i)
 def coswave():
-    for i in range(1, 1000):
-        draw.line(w, (0, 255, 0), (i, -cos(radians(i)) * 100 + 500), (i, -cos(radians(i)) * 100 + 500), 3)
+    for i in range(1, width):
+        draw.line(w, (0, 255, 0), (i, -cos(radians(i)) * factor + height/2), (i, -cos(radians(i)) * factor + height/2), 3)
         display.flip()
         print(i)
 def tanwave():
-    for i in range(1, 1000):
-        draw.line(w, (0, 0, 255), (i, -tan(radians(i % 90)) * 100 + 500), (i, -tan(radians(i % 90)) * 100 + 500), 3)
-        display.flip()
-        print(i)
-draw.line(w, (0, 0, 0), (0, 500), (1000, 500), 3)
-sinwave()
-coswave()
-tanwave()
-time.wait(100000)
+    for x in range(1, int(ceil(width/90))):
+        for i in range(1, 90):
+            draw.line(w, (0, 0, 255), (i + 90*x, -tan(radians(i)) * factor + height/2), (i + 90*x, -tan(radians(i)) * factor + height/2), 3)
+            display.flip()
+            print(i)
+        for i in range(1, 90):
+            draw.line(w, (0, 0, 255), (i + 90*x + 90, -tan(radians(-90+i)) * factor + height/2), (i + 90*x + 90, -tan(radians(-90+i)) * factor + height/2), 3)
+            display.flip()
+            print(i)
+def tansinwave():
+    for x in range(1, int(ceil(width/90))):
+        for i in range(1, 90):
+            draw.line(w, (0, 0, 0), (i + 90*x, -tan(sin(radians(i))) * factor + height/2), (i + 90*x, -tan(sin(radians(i))) * factor + height/2), 3)
+            display.flip()
+            print(i)
+        for i in range(1, 90):
+            draw.line(w, (0, 0, 0), (i + 90*x + 90, tan(sin(radians(90-i))) * factor + height/2), (i + 90*x+90, tan(sin(radians(90-i))) * factor + height/2), 3)
+            display.flip()
+            print(i)
+
+draw.line(w, (0, 0, 0), (0, height/2), (width, height/2), 3)
+#sinwave()
+#coswave()
+#tanwave()
+tansinwave()
+time.wait(30000)
