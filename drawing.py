@@ -13,7 +13,7 @@ shape = 0
 s1 = 0
 s2 = 0
 drawing = False
-outline = False
+no_fill = False
 o1 = False
 o2 = False
 d = True
@@ -37,7 +37,7 @@ while d:
                 elif 1405 < x1 < 1495 and 5 < y1 < 145:
                     s1 = 5 #circle
                 elif 905 < x1 < 995 and 5 < y1 < 145:
-                    o1 = True #outline
+                    o1 = True #no_fill
             #color select
             elif x1 < 295 and y1 < 150:
                 if 5 < x1 < 70 and 5 < y1 < 70:
@@ -89,7 +89,7 @@ while d:
                         shape = "circle"
                     print(shape)
                 if o1 == o2 == True:
-                    outline = not outline
+                    no_fill = not no_fill
             if o1 or o2:
                 o1 = False
                 o2 = False
@@ -160,27 +160,36 @@ while d:
     #    elif objects[i + 1] == "rect":
     #        draw.rect(objects[i])
     if drawing:
-        if outline:
+        if no_fill:
             if shape == "line":
                 draw.line(w, color, (x1, y1), (cx, cy), 1)
             elif shape == "rect":
                 draw.rect(w, color, Rect(x1, y1, cx - x1, cy - y1), 1)
             elif shape == "square":
                 #FIX THIS
-                if cx < cy:
-                    draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
-                else:
-                    draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+
+                if cx > x1 and cy > y1:
+                    if cx - x1 > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+                    elif cx - x1 < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
+                elif cx < x1 and cy > y1:
+                    if x1 - cx < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, -(cx - x1)), 1)
+                    elif x1 - cx > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, -(cy - y1), cy - y1), 1)
+                elif cx > x1 and cy < y1:
+                    if cx - x1 > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, -(cx - x1)), 1)
+                    elif cx - x1 < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, -(cy - y1), cy - y1), 1)
+                elif cx < x1 and cy < y1:
+                    if x1 - cx > y1 - cy:
+                        draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+                    elif x1 - cx < y1 - cy:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
             elif shape == "ellipse":
                 #FIX THIS
-                print("x1", x1)
-                print("y1", y1)
-                print("cx", cx)
-                print("cy", cy)
-                print("cx - x1", abs(cx - x1))
-                print("x1 - cx", abs(x1 - cx))
-                print("cy - y1", abs(cy - y1))
-                print("y1 - cy", abs(y1 - cy))
                 if cx > x1 and cy > y1:
                     draw.ellipse(w, color, Rect(x1, y1, abs(cx - x1) + 1, abs(cy - y1) + 1), 1)
                 elif cx > x1 and cy < y1:
@@ -191,33 +200,89 @@ while d:
                     draw.ellipse(w, color, Rect(cx, cy, abs(x1 - cx) + 1, abs(y1 - cy) + 1), 1)
             elif shape == "circle":
                 #FIC THIs
-
                 if cx > x1 and cy > y1:
-                    draw.ellipse(w, color, Rect(x1, y1, abs(cx - x1) + 1, abs(cy - y1) + 1), 1)
-                elif cx > x1 and cy < y1:
-                    draw.ellipse(w, color, Rect(x1, cy, abs(cx - x1) + 1, abs(y1 - cy) + 1), 1)
+                    if cx - x1 > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+                    elif cx - x1 < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
                 elif cx < x1 and cy > y1:
-                    draw.ellipse(w, color, Rect(cx, y1, abs(x1 - cx) + 1, abs(cy - y1) + 1), 1)
+                    if x1 - cx < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, -(cx - x1)), 1)
+                    elif x1 - cx > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, -(cy - y1), cy - y1), 1)
+                elif cx > x1 and cy < y1:
+                    if cx - x1 > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, -(cx - x1)), 1)
+                    elif cx - x1 < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, -(cy - y1), cy - y1), 1)
                 elif cx < x1 and cy < y1:
-                    draw.ellipse(w, color, Rect(cx, cy, abs(x1 - cx) + 1, abs(y1 - cy) + 1), 1)
-
+                    if x1 - cx > y1 - cy:
+                        draw.ellipse(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+                    elif x1 - cx < y1 - cy:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
+            
         else:
             if shape == "line":
                 draw.line(w, color, (x1, y1), (cx, cy), 1)
             elif shape == "rect":
                 draw.rect(w, color, Rect(x1, y1, cx - x1, cy - y1))
             elif shape == "square":
-                if cx < cy:
-                    draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1))
-                else:
-                    draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1))
+                #FIX THIS
+
+                if cx > x1 and cy > y1:
+                    if cx - x1 > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1))
+                    elif cx - x1 < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1))
+                elif cx < x1 and cy > y1:
+                    if x1 - cx < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, -(cx - x1)))
+                    elif x1 - cx > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, -(cy - y1), cy - y1))
+                elif cx > x1 and cy < y1:
+                    if cx - x1 > cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, -(cx - x1)))
+                    elif cx - x1 < cy - y1:
+                        draw.rect(w, color, Rect(x1, y1, -(cy - y1), cy - y1))
+                elif cx < x1 and cy < y1:
+                    if x1 - cx > y1 - cy:
+                        draw.rect(w, color, Rect(x1, y1, cy - y1, cy - y1))
+                    elif x1 - cx < y1 - cy:
+                        draw.rect(w, color, Rect(x1, y1, cx - x1, cx - x1))
             elif shape == "ellipse":
-                draw.ellipse(w, color, Rect(x1, y1, cx - x1, cy - y1))
+                #FIX THIS
+                if cx > x1 and cy > y1:
+                    draw.ellipse(w, color, Rect(x1, y1, abs(cx - x1) + 1, abs(cy - y1) + 1))
+                elif cx > x1 and cy < y1:
+                    draw.ellipse(w, color, Rect(x1, cy, abs(cx - x1) + 1, abs(y1 - cy) + 1))
+                elif cx < x1 and cy > y1:
+                    draw.ellipse(w, color, Rect(cx, y1, abs(x1 - cx) + 1, abs(cy - y1) + 1))
+                elif cx < x1 and cy < y1:
+                    draw.ellipse(w, color, Rect(cx, cy, abs(x1 - cx) + 1, abs(y1 - cy) + 1))
             elif shape == "circle":
-                if cx < cy:
-                    draw.ellipse(w, color, Rect(x1, y1, cx - x1, cx - x1))
-                else:
-                    draw.ellipse(w, color, Rect(x1, y1, cy - y1, cy - y1))
+                #FIC THIs
+                if cx > x1 and cy > y1:
+                    if cx - x1 > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cy - y1, cy - y1))
+                    elif cx - x1 < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, cx - x1))
+                elif cx < x1 and cy > y1:
+                    if x1 - cx < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, -(cx - x1)))
+                    elif x1 - cx > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, -(cy - y1), cy - y1))
+                elif cx > x1 and cy < y1:
+                    if cx - x1 > cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, -(cx - x1)))
+                    elif cx - x1 < cy - y1:
+                        draw.ellipse(w, color, Rect(x1, y1, -(cy - y1), cy - y1))
+                elif cx < x1 and cy < y1:
+                    if x1 - cx > y1 - cy:
+                        draw.ellipse(w, color, Rect(x1, y1, cy - y1, cy - y1), 1)
+                    elif x1 - cx < y1 - cy:
+                        draw.ellipse(w, color, Rect(x1, y1, cx - x1, cx - x1), 1)
+     
+
                 
 
     
@@ -239,21 +304,21 @@ while d:
     #Shape selection
     draw.rect(w, (150, 150, 150), Rect(905, 5, 90, 140))
     text = font.SysFont(None, 30)
-    mytext = text.render("Outline", 1, (0, 0, 0))
-    if outline:
-        mytext2 = text.render("On", 1, (0, 0, 0))
-    else:
+    mytext = text.render("Fill", 1, (0, 0, 0))
+    if no_fill:
         mytext2 = text.render("Off", 1, (0, 0, 0))
+    else:
+        mytext2 = text.render("On", 1, (0, 0, 0))
     w.blit(mytext, (910, 10))
     w.blit(mytext2, (910, 60))
 
-    
-    draw.rect(w, (200, 200, 200), Rect(1405, 5, 90, 140))
+    #CIRCLE DISABLED
+    draw.rect(w, (0, 0, 0), Rect(1405, 5, 90, 140))
     draw.rect(w, (200, 200, 200), Rect(1305, 5, 90, 140))
     draw.rect(w, (200, 200, 200), Rect(1205, 5, 90, 140))
     draw.rect(w, (200, 200, 200), Rect(1105, 5, 90, 140))
     draw.rect(w, (200, 200, 200), Rect(1005, 5, 90, 140))
-    if not outline:
+    if not no_fill:
         draw.line(w, color, (1010, 10), (1090, 135), 5)
         draw.rect(w, color, Rect(1110, 10, 80, 130))
         draw.rect(w, color, Rect(1215, 30, 70, 70))
