@@ -1,348 +1,230 @@
-'''
-This is a bot that blocks ClassPolicy (the screen record part).
-Your teacher or parent can no longer see what you are doing.
-
-This is also a bot that blocks minimization.
-Your teacher cannot minimize your windows.
-
-There are many options.
-
-Be careful using this.
-I am not resposible for anything that you get in trouble for.
-'''
-
 import os
 import time
 import filecmp
 import shutil
 import webbrowser
 import ctypes
-
-from _thread import start_new_thread
-from tkinter import (Tk, Frame, Menu, Button, Radiobutton, Text, Label, IntVar,
-                     END, N, S, E, W, DISABLED)
-from tkinter.ttk import Combobox
+import _thread
+from tkinter import (Tk, BooleanVar, Button, Checkbutton, Frame, IntVar,
+                     Label, LabelFrame, Menu, Radiobutton, Text, Toplevel,
+                     END, N, S, E, W,)
+from tkinter.filedialog import askopenfilename
 from tkinter.colorchooser import askcolor
 from tkinter.messagebox import (showinfo, showerror)
-from tkinter.filedialog import askopenfilename
+from tkinter.ttk import Separator
 
-PREFERENCES = f'c:\\users\\{os.getlogin()}\\preferences.txt'
+MANAGER_USERS = [
+    'xiufei',
+    's-feio',
+    ]
 
-class ClassPolicy:
+POLICY_USERS = [
+    'xiufei',
+    's-feio',
+    's-libo',
+    's-wuju',
+    's-lianga',]
+
+manager_use = os.getlogin() in MANAGER_USERS
+policy_use = os.getlogin() in POLICY_USERS
+
+#PREFERENCES is a file that stores the custon image path for CLassPolicy.
+PREFERENCES = f'{os.path.dirname(__file__)}\\preferences.txt'
+if not os.path.exists(PREFERENCES):
+    open(PREFERENCES, 'w+').close()
+    os.system('attrib +s +h ' + PREFERENCES)
+
+class PolicyFrame(Frame):
     '''
-    This window will block the screen recording part
-    and the minimization part of
-    ClassPolicy and APParent.
+    ClassPolicy screen record blocker.
+    A custom image can be used.
     '''
-    def __init__(self):
-        #Creates a preferences file for the custom image
-        if not os.path.exists(PREFERENCES):
-            open(PREFERENCES, 'w+').close()
-            os.system('attrib +s +h ' + PREFERENCES)
+    def __init__(self, master, title):
+        Frame.__init__(self, master)
+        self.grid()
 
-        self.user32 = ctypes.WinDLL('user32')
-        self.disclaimers()
-        self.create_ui()
-        self.main()
+        self.block = BooleanVar()
+        self.block.set(True)
+        self.use_custom = BooleanVar()
+        self.use_custom.set(False)
 
-    def disclaimers(self):
-        '''
-        Checks if the user is authorized.
-        '''
-        #People it has been sold to.
-        if (#os.getlogin() != 's-libo' and #Bowen
-            #os.getlogin() != 's-liangai' and #Aileen
-            #os.getlogin() != 's-wuju' and #Justin
-            os.getlogin() != 's-feio' and
-            os.getlogin() != 'xiufei'):
-            os.remove(__file__)
-            showerror(title='Unauthorized use',
-                      message='You are not authorized to use this.')
-            
-            showinfo(title='What now',
-                     message='''The software was wiped from your computer.
-                     Go actually buy a copy.''')
-            raise
-            exit()
-            
-    def create_ui(self):
-        '''
-        Creates the UI of the ClassPolicy bot.
-        '''
-        self.root = Tk()
-        self.root.title('ClassPolicy')
+        self.title = title
 
-        #Everything will use this font.
-        self.font=('Calibri', 12)
-        
-        self.create_policy_frame()
-        self.create_manager_frame()
-        self.create_menus()
-
-        self.policy_frame.grid()
-        self.manager_frame.grid(column=0, row=1)
-
-        self.root.resizable(width=False, height=False)
-        self.root.config(menu=self.menubar)
-        self.root.update()
-
-	#Creating the window
-    def create_policy_frame(self):
-        '''
-        Creates the frame of the screen record blocker.
-        '''
-        self.policy_frame = Frame(self.root)       
-
-
-        #The UI.
-        self.l1 = Label(self.policy_frame,
-                        text='The last time your teacher used ClassPolicy',
-                        font=self.font)
+        self.l1 = Label(self,
+                        text='The last time your teacher used ClassPolicy')
         self.l1.grid(row=0)
 
-        self.last_used = Text(self.policy_frame, height=1, width=30,
-                              font=self.font)
+        self.last_used = Text(self, height=1, width=30)
         self.last_used.grid(row=1)
         self.last_used.insert(END, 'Has not used yet')
 
-        self.l2 = Label(self.policy_frame, text='Current time',
-                        font=self.font)
+        self.l2 = Label(self, text='Current time')
         self.l2.grid(row=0, column=1)
 
-        self.current = Text(self.policy_frame, height=1, width=17,
-                            font=self.font)
+        self.current = Text(self, height=1, width=20)
         self.current.grid(row=1, column=1)
 
-    def create_manager_frame(self):
+        self.options = Frame(self)
+        self.options.grid(row=2, column=0, columnspan=2, sticky=W)
+
+        self.b_change = Button(self.options, text='Change Custom Image',
+                               command=self.change_custom)
+        self.b_change.grid()
+
+        self.b_get_location = Button(self.options, text='Custom Image View',
+                                     command=self.view_custom)
+        self.b_get_location.grid(row=0, column=1)
+
+        self.blocking = Checkbutton(self.options, text='Block CP',
+                                    var=self.block, onvalue=True,
+                                    offvalue=False)
+        self.blocking.grid(row=0, column=2)
+
+        self.using_custom = Checkbutton(self.options, text='Use Custom Image',
+                                   var=self.use_custom, onvalue=True,
+                                   offvalue=False)
+        self.using_custom.grid(row=0, column=3)
+
+    def format_time(self, now=time.localtime()):
         '''
-        Creates the frame of the window manager.
+        For
         '''
-        self.manager_frame = Frame(self.root)
+        now = list(now)
+        if now[5] < 10:
+            now[5] = '0' + str(now[5])
+        if int(now[3]) == 0:
+            now[3] = 12
+        if len(str(now[3])) == 1:
+            now[3] = '0' + str(now[3])
+        if len(str(now[4])) == 1:
+            now[4] = '0' + str(now[4])
+        return str(str(now[3]) + ':' + str(now[4]) + ':' + str(now[5]) +
+                   '  ' + str(now[1]) + '/' + str(now[2]) + '/' + str(now[0]))
+ 
+    def check(self):
+        if self.use_custom.get() == 1 and self.get_custom() != '':
+            #Using custom image
+            try:
+                shutil.copy(self.get_custom(),
+                        f'c:\\classpolicy\\{os.getlogin()}.jpeg')
+            except:
+                pass
+                        #Copies personal file to ClassPolicy folder
+
+            try:
+                same = filecmp.cmp(
+                    self.get_custom(),
+                    f'c:\\classpolicy\\{os.getlogin()}.jpeg')
+            except:
+                same = False
+            if same == False:
+                self.insert_last_used()
+                try:
+                    os.remove(f'c:\\classpolicy\\{os.getlogin()}.jpeg')
+                except:
+                    pass
+
+        elif self.use_custom.get() == 1 and self.get_custom() == '':
+            #Need to set a custom image
+            self.change_custom()
+
+        else:
+            #Not using custom image
+            if os.path.exists(f'c:\\classpolicy\\{os.getlogin()}.jpeg'):
+                #If the ClassPolicy file gets created
+                self.insert_last_used()
+                try:
+                    os.remove(f'c:\\classpolicy\\{os.getlogin()}.jpeg')
+                except:
+                    pass
+
+    def update(self):
+        self.insert_time()
+
+    def get_custom(self):
+        try:
+            with open(PREFERENCES, 'r') as file:
+                content = file.read()
+                file.close()
+                return content
+        except PermissionError:
+            showerror(title=' denied', message='''
+Could not get the custom image.
+Check your permissions.''')
+            self.use_custom.set(0)
+
+    def change_custom(self):
+        content = askopenfilename(title='Open image')
+        if content != '':
+            try:
+                with open(PREFERENCES, 'w+') as file:
+                    file.write(content)
+                    file.close()
+            except PermissionError as err:
+                print(err)
+                self.use_custom.set(0)
+
+        else:
+            self.use_custom.set(0)
+
+    def view_custom(self):
+        pass
+
+    def insert_time(self):
+        self.current.delete(1.0, END)
+        self.current.insert(END, self.format_time(time.localtime()))
+
+    def insert_last_used(self):
+        self.last_used.delete(1.0, END)
+        self.last_used.insert(END, self.format_time(time.localtime()))
+
+
+class ManagerFrame(Frame):
+    def __init__(self, master, title):
+        Frame.__init__(self, master)
+        self.grid()
+
+        self.title = title
+        self.user32 = ctypes.WinDLL('user32')
 
         self.window_action = IntVar()
         self.window_action.set(2) #2 is minimixe, 3 is maximize, 4 is restore
 
+        self.windowing = False
         self.block = False
 
-        self.window_label = Label(self.manager_frame,
-                                  text='  Enter the window ID (s)  ',
-                                  font=self.font)
+        self.window_label = Label(self, text='Enter the window ID (s)',
+                                  width=24)
         self.window_label.grid()
 
-        self.entry = Text(self.manager_frame, font=self.font,
-                          height=1, width=9)
+        self.entry = Text(self,
+                          height=1, width=10)
         self.entry.grid(row=1, sticky=W)
-        self.entry2 = Text(self.manager_frame, font=self.font,
-                           height=1, width=9)
+        self.entry2 = Text(self,
+                           height=1, width=10)
         self.entry2.grid(row=1, sticky=E)
 
-        self.get_button = Button(self.manager_frame, text='Get Window ID',
-                                 command=self.get, font=self.font)
+        self.get_button = Button(self, text='Get Window ID',
+                                 command=self.get)
         self.get_button.grid(row=2, column=0, sticky=W)
 
-        self.start_button = Button(self.manager_frame, text='Start',
-                                   command=self.start_block, font=self.font)
+        self.start_button = Button(self, text='Start',
+                                   command=self.toggle_start)
         self.start_button.grid(row=2, column=0, sticky=E)
 
-        self.action_choice_1 = Radiobutton(self.manager_frame, text='Minimize',
+        self.action_choice_1 = Radiobutton(self, text='Minimize',
                                            variable=self.window_action,
-                                           value=2, font=self.font)
+                                           value=2)
         self.action_choice_1.grid(row=0, column=1)
 
-        self.action_choice_2 = Radiobutton(self.manager_frame, text='Maximize',
+        self.action_choice_2 = Radiobutton(self, text='Maximize',
                                            variable=self.window_action,
-                                           value=3, font=self.font)
+                                           value=3)
         self.action_choice_2.grid(row=1, column=1)
-        self.action_choice_3 = Radiobutton(self.manager_frame, text='Restore',
+        self.action_choice_3 = Radiobutton(self, text='Restore',
                                            variable=self.window_action,
-                                           value=4, font=self.font)
+                                           value=4)
         self.action_choice_3.grid(row=2, column=1, sticky=W)
-    
-    def create_menus(self):
-        '''
-        Created the menus.
-        '''
-
-        #IntVars for the menu options.
-        self.stay_on_top = IntVar()
-        self.stay_on_top.set(1)
-        self.block_classpolicy = IntVar()
-        self.block_classpolicy.set(1)
-        self.use_custom = IntVar()
-        self.use_custom.set(0)
-
-        
-        self.menubar = Menu(self.root, tearoff=0)
-
-        #Option menu
-        self.option_menu = Menu(self.menubar, tearoff=0)
-
-        self.option_menu.add_command(label='Background Color',
-                                    command=self.color)
-        self.option_menu.add_command(label='Text Color',
-                                    command=self.tcolor)
-        self.option_menu.add_command(label='Text Box Background Color',
-                                    command=self.bcolor)
-        self.option_menu.add_command(label='Text Box Text Color',
-                                    command=self.btcolor)
-        self.option_menu.add_command(label='NOTE: COLORS ARE GLITCHY',          
-                                     state=DISABLED)
-        self.option_menu.add_separator()
-
-        self.option_menu.add_checkbutton(label='Stay On Top',
-                                        variable=self.stay_on_top,
-                                        onvalue=1, offvalue=0)
-
-        #Help menu
-        self.help_menu = Menu(self.menubar, tearoff=0)
-        self.help_menu.add_command(label='About this program',
-                                   command=self.info)
-        self.help_menu.add_command(label='About ClassPolicy',
-                                   command=self.policyhelp)
-        self.help_menu.add_command(label='Window Blocker help',
-                                   command=self.show_help)
-
-        self.help_menu.add_separator()
-        self.help_menu.add_command(label='Take a short survey',
-                                     command=self.open_survey)
-
-        #File menu
-        self.file_menu = Menu(self.menubar, tearoff=0)
-
-
-        self.file_menu.add_checkbutton(label='Use Custom Image',
-                                          variable=self.use_custom,
-                                          onvalue=1, offvalue=0)
-        self.file_menu.add_command(label='Change Custom Image',
-                                      command=self.save_location)
-        self.file_menu.add_command(label='View Custom Image',
-                                      command=self.view_image)
-        self.file_menu.add_separator()
-
-
-        self.file_menu.add_checkbutton(label='Block ClassPolicy',
-                                          variable=self.block_classpolicy,
-                                          onvalue=1, offvalue=0)        
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label='Exit',
-                                   command=self.policy_frame.destroy)
-
-        #Add menus to root
-        self.menubar.add_cascade(label='File', menu=self.file_menu)
-        self.menubar.add_cascade(label='Properties', menu=self.option_menu)
-        self.menubar.add_cascade(label='Help', menu=self.help_menu)
-
-    #Customization
-    def change_text(self):
-        def on_closing():
-            self.font = (str(font_name.get()), int(font_size.get()))
-            top.destroy()
-
-        top = Toplevel(self.root)
-        
-    def color(self):
-        '''
-        Changes the background color.
-
-        So far, the only color changing thing that works fully.
-        '''
-        c = askcolor(title='Change background color')[1]
-        self.root.config(background=c)
-        self.l1.config(background=c)
-        self.l2.config(background=c)
-        self.window_label.config(background=c)
-        self.manager_frame.config(background=c)
-        self.policy_frame.config(background=c)
-        self.action_choice_1.config(background=c)
-        self.action_choice_2.config(background=c)
-        self.action_choice_3.config(background=c)
-
-        self.get_button.config(background=c)
-        self.start_button.config(background=c)
-        
-    def tcolor(self):
-        '''
-        Changes the text color.
-        '''
-        c = askcolor(title='Change text color')[1]
-        self.l1.config(fg=c)
-        self.l2.config(fg=c)
-
-    def bcolor(self):
-        '''
-        Changes the text box background color.
-        '''
-        c = askcolor(title='Change text box background color')[1]
-        self.current.config(bg=c)
-        self.last_used.config(bg=c)
-
-    def btcolor(self):
-        '''
-        Changes the text box text color.
-        '''
-        c = askcolor(title='Change text box text color')[1]
-        self.current.config(fg=c)
-        self.last_used.config(fg=c)
-
-    def info(self):
-        '''
-        About this program.
-        '''
-        showinfo(title='About this program',
-                 message='''A quickly assembled ClassPolicy blocker.
-
-Functions:
-
-Blocks ClassPolicy
-Checks if ClassPolicy is being used
-Automatically shows or hides any window
-''')
-
-    def policyhelp(self):
-        '''
-        Explains how ClassPolicy works.
-        '''
-        text='''This document has 3 sections.
-1: What ClassPolicy does
-2: How it works
-3:How it is blocked.
----------------------------------------------------------------------
-1
-'ClassPolicy is a simple, secure and powerful classroom
-orchestration software for Windows devices.' - classpolicy.com
-Basically, it lets the teachers know what you are doing.
-There are two things the teacher can do.
-Class View: The teacher sees low-quality versions of all screens.
-Individual: They can view one person's screen in high-quality.
-
-It can also create a lock screen on your computer that will disable it.
-
-It can also prevent certain windows from opening.
-
-2
-This is how ClassPolicy gets your screen.
-Your teacher presses the 'Update' button on their computer.
-First, it creates a .jpeg file and a .bmp file.
-These are screenshots of your screens.
-The .jpeg file is what is shown on Class View.
-It will update on your teacher's computer.
-
-3
-The .jpeg file is deletable.
-This program constantly deletes or replaces that file.
-If a screenshot appears, that means ClassPolicy is being used.
-'''
-        showinfo(title='About ClassPolicy', message=text)
-
-    def open_survey(self):
-        '''
-        Opens the survey link in the default web browser.
-        '''
-        webbrowser.open('https://forms.gle/ajsKru5EzrwZAiPE8')
-        showinfo(title=f'Thanks, {os.getlogin()}',
-                 message='Thanks for wanting to improve this service.')
-
-    #Functions of the screen record blocker
 
     def get_location(self):
         '''
@@ -372,90 +254,22 @@ If a screenshot appears, that means ClassPolicy is being used.
         '''
         showinfo(title='File path', message=self.get_location())
 
-    def insert_last_used(self):
+    def toggle_start(self):
         '''
-        Inserts the current time imto the last used box.
+        Changes the value of self.windowing.
         '''
-        try:
-            self.last_used.delete(1.0, END)
-            self.last_used.insert(END, self.format_time(time.localtime()))
-            self.root.update()
-        except:
-            pass
+        self.windowing = not self.windowing
+        print(self.windowing)
 
-    def insert_current_time(self):
-        '''
-        Inserts the current time into the current time box.
-        '''
-        try:
-            self.current.delete(1.0, END)
-            self.current.insert(END, self.format_time(time.localtime()))
-            self.root.update()
-        except:
-            pass
-
-
-    def format_time(self, now=time.localtime()):
-        '''
-        Formats the current time into a more readable format.
-        '''
-        now = list(now)
-        if now[5] < 10:
-            now[5] = '0' + str(now[5])
-        if int(now[3]) == 0:
-            now[3] = 12
-        if len(str(now[3])) == 1:
-            now[3] = '0' + str(now[3])
-        if len(str(now[4])) == 1:
-            now[4] = '0' + str(now[4])
-        return str(str(now[3]) + ':' + str(now[4]) + ':' + str(now[5]) +
-                   '  ' + str(now[1]) + '/' + str(now[2]) + '/' + str(now[0]))
-
-    def check_classpolicy(self):
-        if self.use_custom.get() == 1 and self.get_location() != '':            #Using custom image
-            try:
-                shutil.copy(self.get_location(),
-                        f'c:\\classpolicy\\{os.getlogin()}.jpeg')
-            except:
-                pass
-                        #Copies personal file to ClassPolicy folder
-
-            try:
-                same = filecmp.cmp(
-                    self.get_location(),
-                    f'c:\\classpolicy\\{os.getlogin()}.jpeg')
-            except:
-                same = False
-            if same == False:
-                self.insert_last_used()
-                try:
-                    os.remove(f'c:\\classpolicy\\{os.getlogin()}.jpeg')
-                except:
-                    pass
-
-        elif self.use_custom.get() == 1 and self.get_location() == '':
-            #Need to set a custom image
-            self.save_location()
-
-        else:
-            #Not using custom image
-            if os.path.exists(f'c:\\classpolicy\\{os.getlogin()}.jpeg'):
-                #If the ClassPolicy file gets created
-                self.insert_last_used()
-                try:
-                    os.remove(f'c:\\classpolicy\\{os.getlogin()}.jpeg')
-                except:
-                    pass
-
-    #Functions for the window manager
-
-    def start_block(self):
+    def window_action(self):
         '''
         Start constantly doing things to windows.
         '''
         #Makes it work with both window IDs and window titles
         if (self.entry.get(1.0, END).strip() == '' and
             self.entry2.get(1.0, END).strip() == ''):
+            showerror(title='Nah', message='No Window IDs')
+            self.toggle_start()
             return
         
         try:
@@ -464,6 +278,9 @@ If a screenshot appears, that means ClassPolicy is being used.
         except:
             self.window_id = self.user32.FindWindowW(None,
                                                      self.entry.get(1.0, END))
+        
+        print(self.user32.ShowWindow(self.window_id,
+                               self.window_action.get()))
 
         #REpeat for second entry box
         try:
@@ -471,26 +288,25 @@ If a screenshot appears, that means ClassPolicy is being used.
             self.window_id2 = int(self.entry2.get(1.0, END))
         except:
             self.window_id2 = self.user32.FindWindowW(None,
-                                                     self.entry2.get(1.0, END))
-        if self.window_id2 == 0 and self.window_id == 0:
-            return
+                                                      self.entry2.get(1.0, END))
+        
+        print(self.user32.ShowWindow(self.window_id2,
+                               self.window_action.get()))
 
         self.block = True
-        self.start_button.config(text='Stop', command=self.stop_block)
+        self.start_button.config(text='Stop', command=self.stop_window_action)
 
-    def stop_block(self):
+    def stop_window_action(self):
         '''
         Stops constantly doing things to windows.
         '''
         self.block = False
-        self.start_button.config(text='Start', command=self.start_block)
-        self.root.update()
+        self.start_button.config(text='Start')
         
     def get(self):
         '''
         Gets a window id.
         '''
-        self.root.update()
         time.sleep(3)
         #Puts the ID into the correct box.
         if self.entry.get(1.0, END).strip() == '':
@@ -500,67 +316,151 @@ If a screenshot appears, that means ClassPolicy is being used.
             self.entry2.delete(1.0, END)
             self.entry2.insert(END, self.user32.GetForegroundWindow())
 
-    def survey(self):
-        '''
-        Opens up the feedback survey.
-        '''
-        webbrowser.open()
-        showinfo(master=self.root, title='Thanks, ' + os.getlogin(),
-                 message='Thanks for wanting to improve this service.')
 
-    def show_help(self):
-        '''
-        Shows some help.
-        '''
-        showinfo(master=self.root, title='Help', message='''
-How to use this software:
+class Menubar(Menu):
+    def __init__(self, root):
+        Menu.__init__(self, root)
+        self.root = root
+        self.root.config(menu=self)
 
-To get a window ID, click on the Get Window ID button.
-There will be a 3 second countdown, in which you
-will need to select a window by clicking on it.
-Then, the window ID will be entered into the entry box.
+        self.options = Menu(self)
+        self.options.add_command(label='Background Color',
+                                 command=self.change_background)
+        self.options.add_command(label='Text Color',
+                                 command=self.change_text)
+        self.options.add_command(label='Text Box Color',
+                                 command=self.change_text_box)
+        self.options.add_command(label='Text Box Text Color',
+                                 command=self.change_text_box_text)
 
-If you know for sure the window title, just enter that into the box.
+        self.add_cascade(label='Options', menu=self.options)
 
-Tips:
-During the AP Parent screen lock, use the Minimize function on it.
+        self.help = Menu(self)
+        self.help.add_command(label='About ClassPolicy', command=self.about)
 
-During the ClassPolicy window minimizer, use the Restore function.
-Select the window you want to have open because after
-ClassPolicy starts there is no way to get it.
 
-If you want to open up multiple windows, then
-''')
+        self.add_cascade(label='Help', menu=self.help)
+        
 
-    def main(self):
-        '''
-        Main loop.
 
-        Replaces or deletes the ClassPolicy file.
-        Checks if ClassPolicy is being used.
-        Updates the UI.
-        Does things to windows.
-        '''
-        while True:
-            if self.block_classpolicy.get() == 1:
-                self.check_classpolicy()
+    def change_background(self):
+        color = askcolor()[1]
+        self.root.config(bg=color)
+        for i in self.root.grid_slaves():
+            i.config(bg=color)
+            for j in i.grid_slaves():
+                j.config(bg=color)
+                for k in j.grid_slaves():
+                    k.config(bg=color)
+                    for l in k.grid_slaves():
+                        l.config(bg=color)
+        
+        
 
-            self.insert_current_time()
+    def change_text(self):
+        pass
 
-            if self.block:
-                #Actual modifying of the chosen windows.
-                if self.window_id != 0:
-                    self.user32.ShowWindow(int(self.window_id),
-                                           int(self.window_action.get()))
-                if self.window_id2 != 0:
-                    self.user32.ShowWindow(int(self.window_id2),
-                                           int(self.window_action.get()))
+    def change_text_box(self):
+        pass
 
-            if self.stay_on_top.get() == 1:
-                self.root.attributes('-topmost', 1)
-                if not self.root.winfo_ismapped():
-                    self.root.deiconify()
+    def change_text_box_text(self):
+        pass
 
-                    
+    def about(self):
+        tk = Toplevel(self.root)
+        tk.title('About NoPolicy')
+        Label(tk, text='NoPolicy', font=('Calibri', 20)).grid()
+        Label(tk, text='BSD ClassPolicy Disabler and Window Manager').grid()
+        Label(tk, text='\n\n\n\nemail: usemsedge@gmail.com').grid()
+        Label(tk, text='https://www.github.com/pyva-group').grid()
+        
+        
+        
+
+
+def main():
+    '''
+    Opens up a window with both a manager and a screen record blocker.
+    '''
+    root = Tk()
+    root.title('NoPolicy')
+    
+    #Strange.
+##    try:
+    root.iconbitmap(f'{os.getcwd()}\\pyva_icon.bmp')
+##    except:
+##        pass
+
+    if policy_use and manager_use:
+        #Can use both apps.
+        frame = LabelFrame(root, text='Screen Record Blocker')
+        frame.grid(columnspan=2, padx=10, pady=10)
+        
+        policy = PolicyFrame(frame, 'policy')
+        policy.grid()
+        
+        frame2 = LabelFrame(root, text='Window Manager')
+        frame2.grid(padx=10, pady=10)
+    
+        window = ManagerFrame(frame2, 'manager')
+        window.grid()
+        
+        settings = LabelFrame(root, text='Settings')
+        settings.grid(row=1, column=1, padx=10, pady=10)
+
+    elif policy_use:
+        #Can only use the blocker.
+        frame = LabelFrame(root, text='Screen Record Blocker')
+        frame.grid(padx=10, pady=10)
+        
+        policy = PolicyFrame(frame, 'policy')
+        policy.grid()
+
+        settings = LabelFrame(root, text='Settings')
+        settings.grid(row=0, column=1, padx=10, pady=10)
+
+    elif manager_use:
+        #CAn only use the window manager.
+        frame2 = LabelFrame(root, text='Window Manager')
+        frame2.grid(padx=10, pady=10)
+    
+        window = ManagerFrame(frame2, 'manager')
+        window.grid()
+
+        settings = LabelFrame(root, text='Settings')
+        settings.grid(row=0, column=1, padx=10, pady=10)
+
+    top = BooleanVar()
+    stay = Checkbutton(settings, text='Stay On Top', variable=top,
+                       onvalue=True, offvalue=False)
+    
+    stay.grid()
+    Button(settings, text='Quit', command=lambda: root.destroy()).grid()
+
+    menu = Menubar(root)
+
+    user = ctypes.WinDLL('user32')
+
+    while True:
+        if policy_use:
+            if policy.block.get():
+                #Check 
+                policy.check()
+            policy.update()
+        if manager_use:
+            if window.windowing:
+                #Do action to window.
+                window.window_action()
+            else:
+                window.stop_window_action()
+        if top.get():
+            #Stays on top of all other windows and cannot be minimized.
+            if not root.winfo_ismapped():
+                root.attributes('-topmost', 1)
+                root.deiconify()
+
+        root.update()
+      
+
 if __name__ == '__main__':
-    start_new_thread(ClassPolicy, ())
+    main()
