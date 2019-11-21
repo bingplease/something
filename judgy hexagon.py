@@ -21,7 +21,8 @@ art = Artisticness
 
 '''
 
-from tkinter import *
+from tkinter import (Tk, Frame, Label, Scale, Canvas, Menu, N, S, E, W, NE,
+                     messagebox as msg, HORIZONTAL, Entry)
 
 class App(Tk):
     def __init__(self, *args, **kwargs):
@@ -34,7 +35,10 @@ class App(Tk):
 
         #Menu for a bit of documentation and help
         self.menu = Menu(self)
-      
+        self.menu.add_command(label='Help', command=self.help)
+        self.menu.add_command(label='People', command=self.people)
+        self.config(menu=self.menu)
+        
 
 
         #the main canvas to show the hexagon
@@ -120,7 +124,30 @@ class App(Tk):
                                        self.listdownleft[i][1],
                                        self.listupleft[i][0],
                                        self.listupleft[i][1],],
-                                       fill='', width=1, outline='black')                                
+                                       fill='', width=1, outline='black')
+
+    def help(self):
+        msg.showinfo(title='Help', message='''
+How to use this app:
+Move around the sliders and enter a name.
+Then, take a snip of the part without the sliders.
+
+Tutorial on judgy hexagons in real life:
+First, draw like 8 nested hexagons.
+Connect all the points with 6 lines.
+Label each of the lines with a trait (should be the traits below).
+For each of the traits, rank them from 1-8 and draw the point on the line.
+The outer hexagons are higher.
+Now, connect all 6 points, and color in the polygon made by them.''')
+
+    def people(self):
+        msg.showinfo(title='People', message='''
+List of people related to this:
+
+Ideas: Aileen Liang (probably more this person), Hanting Li
+Python implementation: Owen Fei
+Another app to check out: Owen Zhang''')
+
                                       
     def judge(self, t1, t2, t3, t4, t5, t6):
         '''
@@ -176,6 +203,7 @@ class App(Tk):
                        self.athscale.get(),
                        self.artscale.get())
             self.update()
+        
 
 
 if __name__ == '__main__':    
