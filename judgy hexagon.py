@@ -14,7 +14,8 @@ Now, connect all 6 points, and color in the polygon made by them.
 '''
 
 from tkinter import (Tk, Frame, Label, Scale, Canvas, Menu, N, S, E, W,
-                     SE, SW, NE, NW, messagebox as msg, HORIZONTAL, Entry, END)
+                     SE, SW, NE, NW, messagebox as msg, HORIZONTAL, Entry, END,
+                     colorchooser as clr)
 
 class App(Tk):
     def __init__(self, *args, **kwargs):
@@ -23,11 +24,13 @@ class App(Tk):
         '''
         super().__init__(*args, **kwargs)
         
-
+        self.color = 'blue'
+        
         self.winfo_toplevel().title('Judgy Hexagon')
 
         #Menu for a bit of documentation and help
         self.menu = Menu(self)
+        self.menu.add_command(label='Change Color', command=self.change_color)
         self.menu.add_command(label='Help', command=self.help)
         self.menu.add_command(label='People', command=self.people)
         self.config(menu=self.menu)
@@ -144,11 +147,15 @@ class App(Tk):
                                         self.listrightup[i][1],],
                                         fill='', width=1, outline='black')
             
+    def change_color(self):
+        self.color = clr.askcolor(title='Choose a color for the shape')[1]
+
     def help(self):
         msg.showinfo(title='Help', message='''
 How to use this app:
 Move around the sliders and enter a name.
 Type your 6 character traits in the 6 entries.
+You can change the color of shape by clicking on the 'Change Color' menu option.
 Then, take a snip of the part without the sliders.
 
 Tutorial on judgy hexagons in real life:
@@ -200,9 +207,9 @@ Another app to check out: Owen Zhang''')
                                                         t5[1],
                                                         t6[0],
                                                         t6[1],],
-                                                        fill='blue',
+                                                        fill=self.color,
                                                         width=1,
-                                                        outline='blue')
+                                                        outline=self.color)
         self.canvas.update()
 
     def main(self):
